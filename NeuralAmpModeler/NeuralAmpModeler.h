@@ -34,6 +34,7 @@ enum EParams
   kToneTreble,
   kOutputLevel,
   // The rest is fine though.
+  kLinkGainActive,
   kNoiseGateActive,
   kEQActive,
   kOutNorm,

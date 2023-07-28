@@ -19,6 +19,7 @@
 using namespace iplug;
 using namespace igraphics;
 
+// my version
 // Styles
 const IVColorSpec colorSpec{
   DEFAULT_BGCOLOR, // Background
@@ -60,9 +61,10 @@ NeuralAmpModeler::NeuralAmpModeler(const InstanceInfo& info)
   GetParam(kToneMid)->InitDouble("Middle", 5.0, 0.0, 10.0, 0.1);
   GetParam(kToneTreble)->InitDouble("Treble", 5.0, 0.0, 10.0, 0.1);
   GetParam(kOutputLevel)->InitGain("Output", 0.0, -40.0, 40.0, 0.1);
-  GetParam(kNoiseGateThreshold)->InitGain("Gate", -80.0, -100.0, 0.0, 0.1);
-  GetParam(kNoiseGateActive)->InitBool("NoiseGateActive", true);
-  GetParam(kEQActive)->InitBool("ToneStack", true);
+  GetParam(kLinkGainActive)->InitBool("LinkGain", false);
+  GetParam(kNoiseGateThreshold)->InitGain("Gate", -100.0, -100.0, 0.0, 0.1);
+  GetParam(kNoiseGateActive)->InitBool("NoiseGateActive", false);
+  GetParam(kEQActive)->InitBool("ToneStack", false);
   GetParam(kOutNorm)->InitBool("OutNorm", false);
   GetParam(kIRToggle)->InitBool("IRToggle", true);
 
@@ -126,11 +128,11 @@ NeuralAmpModeler::NeuralAmpModeler(const InstanceInfo& info)
     const auto trebleKnobArea = knobsArea.GetGridCell(0, kToneTreble, 1, numKnobs).GetPadded(-singleKnobPad);
     const auto outputKnobArea = knobsArea.GetGridCell(0, kOutputLevel, 1, numKnobs).GetPadded(-singleKnobPad);
 
-    const auto ngToggleArea =
-      noiseGateArea.GetVShifted(noiseGateArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
+
+    const auto lgToggleArea = inputKnobArea.GetVShifted(inputKnobArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
+    const auto ngToggleArea = noiseGateArea.GetVShifted(noiseGateArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
     const auto eqToggleArea = midKnobArea.GetVShifted(midKnobArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
-    const auto outNormToggleArea =
-      outputKnobArea.GetVShifted(midKnobArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
+    const auto outNormToggleArea = outputKnobArea.GetVShifted(midKnobArea.H()).SubRectVertical(2, 0).GetReducedFromTop(10.0f);
 
     // Areas for model and IR
     const auto fileWidth = 200.0f;
@@ -186,7 +188,7 @@ NeuralAmpModeler::NeuralAmpModeler(const InstanceInfo& info)
 
     pGraphics->AttachBackground(BACKGROUND_FN);
     pGraphics->AttachControl(new IBitmapControl(b, linesBitmap));
-    pGraphics->AttachControl(new IVLabelControl(titleArea, "NEURAL AMP MODELER", titleStyle));
+    pGraphics->AttachControl(new IVLabelControl(titleArea, "Denyiz Custom NAM", titleStyle));
     pGraphics->AttachControl(new ISVGControl(modelIconArea, modelIconSVG));
 
 #ifdef NAM_PICK_DIRECTORY
@@ -196,15 +198,20 @@ NeuralAmpModeler::NeuralAmpModeler(const InstanceInfo& info)
     const std::string defaultNamFileString = "Select model...";
     const std::string defaultIRString = "Select IR...";
 #endif
+
     pGraphics->AttachControl(new NAMFileBrowserControl(modelArea, kMsgTagClearModel, defaultNamFileString.c_str(),
                                                        "nam", loadModelCompletionHandler, style, fileSVG, crossSVG,
                                                        leftArrowSVG, rightArrowSVG, fileBackgroundBitmap),
                              kCtrlTagModelFileBrowser);
+
+    // The switches
     pGraphics->AttachControl(new ISVGSwitchControl(irSwitchArea, {irIconOffSVG, irIconOnSVG}, kIRToggle));
     pGraphics->AttachControl(
       new NAMFileBrowserControl(irArea, kMsgTagClearIR, defaultIRString.c_str(), "wav", loadIRCompletionHandler, style,
                                 fileSVG, crossSVG, leftArrowSVG, rightArrowSVG, fileBackgroundBitmap),
       kCtrlTagIRFileBrowser);
+    
+    pGraphics->AttachControl(new NAMSwitchControl(lgToggleArea, kLinkGainActive, "Link Gain", style, switchHandleBitmap));
     pGraphics->AttachControl(new NAMSwitchControl(ngToggleArea, kNoiseGateActive, " ", style, switchHandleBitmap));
     pGraphics->AttachControl(new NAMSwitchControl(eqToggleArea, kEQActive, "EQ", style, switchHandleBitmap));
     pGraphics->AttachControl(
@@ -269,8 +276,12 @@ void NeuralAmpModeler::ProcessBlock(iplug::sample** inputs, iplug::sample** outp
   // Input is collapsed to mono in preparation for the NAM.
   _ProcessInput(inputs, numFrames, numChannelsExternalIn, numChannelsInternal);
   _ApplyDSPStaging();
+  const bool linkGainActive = GetParam(kLinkGainActive)->Value();
   const bool noiseGateActive = GetParam(kNoiseGateActive)->Value();
   const bool toneStackActive = GetParam(kEQActive)->Value();
+
+  // if link gain is active, attenuate the output by the input gain using 
+ 
 
   // Noise gate trigger
   sample** triggerOutput = mInputPointers;

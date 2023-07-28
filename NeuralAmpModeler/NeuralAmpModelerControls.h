@@ -534,7 +534,7 @@ public:
                                  .WithDrawFrame(false)
                                  .WithShadowOffset(2.f);
 
-    AddChildControl(new IVLabelControl(IRECT(), "NEURAL AMP MODELER", titleStyle));
+    AddChildControl(new IVLabelControl(IRECT(), "Denyiz Custom NAM", titleStyle));
 
     WDL_String verStr, buildInfoStr;
     PLUG()->GetPluginVersionStr(verStr);
@@ -545,7 +545,7 @@ public:
     const auto style = mStyle.WithDrawFrame(false).WithValueText(text);
 
 
-    AddChildControl(new IVLabelControl(IRECT(), "By Steven Atkinson", style));
+    AddChildControl(new IVLabelControl(IRECT(), "By Steven Atkinson, Michael Trilesky and Denis Davidov", style));
     AddChildControl(new IVLabelControl(IRECT(), buildInfoStr.Get(), style));
     AddChildControl(new IURLControl(IRECT(), "Plug-in development: Steve Atkinson, Oli Larkin, ... ",
                                     "https://github.com/sdatkinson/NeuralAmpModelerPlugin/graphs/contributors", text,
